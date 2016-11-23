@@ -52,15 +52,19 @@ class Provider extends AbstractProvider implements ProviderInterface
      */
     protected function getUserByToken($token)
     {
-        $response = $this->getHttpClient()->get('https://graph.qq.com/oauth2.0/me?access_token='.$token);
+        $response = $this->getHttpClient()->get('https://graph.qq.com/oauth2.0/me?access_token='.$token.'&unionid=1');
 
-        $this->openId = json_decode($this->removeCallback($response->getBody()->getContents()), true)['openid'];
+        $body = json_decode($this->removeCallback($response->getBody()->getContents()), true);
+        $this->openId = $body['openid'];
 
         $response = $this->getHttpClient()->get(
             "https://graph.qq.com/user/get_user_info?access_token=$token&openid={$this->openId}&oauth_consumer_key={$this->clientId}"
         );
 
-        return json_decode($this->removeCallback($response->getBody()->getContents()), true);
+        return array_merge(
+            ['unionid' => $body['unionid']],
+            json_decode($this->removeCallback($response->getBody()->getContents()), true)
+        );
     }
 
     /**
